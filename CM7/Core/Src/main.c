@@ -199,7 +199,7 @@ Error_Handler();
 
 
 
-    
+    // 測試驗證每傳輸256byte到 SD 卡需要花費多久時間，並且透過 PE13 腳位產生一個高電位脈衝，持續 50ms，以便示波器能夠清楚捕捉到每次寫入的時機點。最後，當所有寫入完成後，透過 LED 燈號顯示測試完成的狀態。
     // =================== 測試範本第三類 開始 ===================
 
     fr = SD_FILEMANAGER_Init();
@@ -233,13 +233,24 @@ Error_Handler();
 
     line256[256] = '\0';
 
+    // 準備開始測試，點亮綠燈表示測試開始
+    BSP_LED_On(LED_GREEN);
+
 
     // PE13 預設 Low
     HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, GPIO_PIN_RESET);
 
 
     // 重複寫入 5000 行
-    for(uint32_t line = 0; line < 5000; line++)
+    //for(uint32_t line = 0; line < 5000; line++)
+    // 實際測試要觀察每次寫入 256 byte 的時間，用 5000會花費很久時間，足夠使用 示波器量測 pulse 間隔時間。
+
+    // 以下程式寫 30 行到 SD 卡，可以確定是OK的，然後再改成 5000 行進行長時間測試。
+
+    // 這裡先測試 30 行，確保功能正常，再進行大批量測試
+    // 經過測試，可以成功寫入 30 行，每行 256 byte，綠燈會先亮起，表示開始寫入到 SD 卡內，當寫完 30 行，綠燈滅，黃燈亮3秒後熄滅。
+    // 拔掉 SD 卡，插入到電腦觀察，可以看到 "SPIFile.txt" 這個檔案裡面有 30 行，每行都是 256 個字元的循環數字（從 '0' 到 '9' 循環）。    
+    for(uint32_t line = 0; line < 30; line++)
     {
         fr = SD_FILEMANAGER_AppendLine(
                 "SPIFile.txt",
@@ -257,7 +268,7 @@ Error_Handler();
                         GPIO_PIN_13,
                         GPIO_PIN_SET);
 
-        HAL_Delay(50);//高電位為 50ms，讓示波器能夠清楚捕捉到每次寫入的時機點
+        HAL_Delay(1);//高電位為 1ms，讓示波器能夠清楚捕捉到每次寫入的時機點
 
         // ===== pulse Low =====
         HAL_GPIO_WritePin(GPIOE,
@@ -267,13 +278,11 @@ Error_Handler();
 
 
     // 測試完成
-    BSP_LED_On(LED_GREEN);
-    BSP_LED_On(LED_YELLOW);
-
-    HAL_Delay(3000);
-
     BSP_LED_Off(LED_GREEN);
+    BSP_LED_On(LED_YELLOW);
+    HAL_Delay(3000);    
     BSP_LED_Off(LED_YELLOW);
+    while(1);
 
     // =================== 測試範本第三類 結束 ===================
     

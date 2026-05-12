@@ -20,18 +20,18 @@
 
 ### 硬體說明：
 
-** MCU **
+**MCU**
 *   STM32H755ZIT6
 
-** 開發板 **
+**開發板**
 *   NUCLEO-H755ZI-Q
 
-** 軟體開發工具 **
+**軟體開發工具**
 *   STM32CubeIDE
 *   STM32CubeMX
 *   STM32CubeProgrammer
 
-** SPI 與 SD 卡模組 接線分佈說明 **
+**SPI 與 SD 卡模組 接線分佈說明**
 
 | SPI 腳位 | MCU 腳位 |
 | :--- | :--- |

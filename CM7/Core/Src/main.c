@@ -136,10 +136,12 @@ Error_Handler();
 /* USER CODE END Boot_Mode_Sequence_2 */
 
   /* USER CODE BEGIN SysInit */
+
   // LED1， LED2， LED3 初始化 
   BSP_LED_Init(LED_GREEN);
   BSP_LED_Init(LED_YELLOW);
   BSP_LED_Init(LED_RED);
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -166,12 +168,132 @@ Error_Handler();
 
   // 以上的初始化關鍵點是 檔案： diskio.c 檔案，透過 SPI 根據 SD Protocols 與 SD 卡進行通訊，實現對 SD 卡的讀寫操作，並且提供給 FATFS 使用。 檔案路徑： SPI1FileRW\CM7\Middlewares\Third_Party\FatFs\diskio.c，這個檔案只能透過 STM32CubeIDE 開啟，無法直接在檔案總管中開啟編輯，裡面有一個重要的函式 disk_initialize()，這個函式會呼叫 SD_Init() 來初始化 SD 卡，確保 SD 卡已經準備好進行後續的讀寫操作。
 
+
+    // =========================
+    // PE13 手動初始化為 GPIO Output
+    // =========================
+
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = GPIO_PIN_13;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIOE,
+                    GPIO_PIN_13,
+                    GPIO_PIN_RESET);
+
+
+
+
   /* USER CODE BEGIN 2 */
 
   /*  以下是檔案測試 流程 可以當作 API 範例 */
 
 
-  
+
+
+
+    
+    // =================== 測試範本第三類 開始 ===================
+
+    fr = SD_FILEMANAGER_Init();
+
+    if(fr != FR_OK)
+    {
+        BSP_LED_On(LED_RED);
+        while(1);
+    }
+
+
+    // 寫入前先刪除舊檔案
+    fr = SD_FILEMANAGER_Delete("SPIFile.txt");
+
+    if(fr != FR_OK &&
+    fr != FR_NO_FILE)
+    {
+        BSP_LED_On(LED_RED);
+        while(1);
+    }
+
+
+    // 建立 256 byte 測試資料
+    char line256[257];
+
+    for(uint16_t i = 0; i < 256; i++)
+    {
+        // 產生循環數字字元
+        line256[i] = '0' + (i % 10);
+    }
+
+    line256[256] = '\0';
+
+
+    // PE13 預設 Low
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, GPIO_PIN_RESET);
+
+
+    // 重複寫入 5000 行
+    for(uint32_t line = 0; line < 5000; line++)
+    {
+        fr = SD_FILEMANAGER_AppendLine(
+                "SPIFile.txt",
+                line256
+            );
+
+        if(fr != FR_OK)
+        {
+            BSP_LED_On(LED_RED);
+            while(1);
+        }
+
+        // ===== pulse High =====
+        HAL_GPIO_WritePin(GPIOE,
+                        GPIO_PIN_13,
+                        GPIO_PIN_SET);
+
+        HAL_Delay(50);//高電位為 50ms，讓示波器能夠清楚捕捉到每次寫入的時機點
+
+        // ===== pulse Low =====
+        HAL_GPIO_WritePin(GPIOE,
+                        GPIO_PIN_13,
+                        GPIO_PIN_RESET);
+    }
+
+
+    // 測試完成
+    BSP_LED_On(LED_GREEN);
+    BSP_LED_On(LED_YELLOW);
+
+    HAL_Delay(3000);
+
+    BSP_LED_Off(LED_GREEN);
+    BSP_LED_Off(LED_YELLOW);
+
+    // =================== 測試範本第三類 結束 ===================
+    
+// 先檢查 SD 卡是否能夠正常初始化，然後刪除舊檔案（如果存在的話），確保測試從乾淨的狀態開始。接著建立一行 256 字元的測試資料，並且重複寫入 5000 行到 "SPIFile.txt" 檔案中。在每次寫入時，透過 PE13 腳位產生一個高電位脈衝，持續 50ms，以便示波器能夠清楚捕捉到每次寫入的時機點。最後，當所有寫入完成後，透過 LED 燈號顯示測試完成的狀態.
+
+// 檢查 SD card 是否有此檔案，且有 5000行 2026-05-11
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /*
   // =================== 測試範本第二類 開始 ===================
   fr = SD_FILEMANAGER_Init();
 
@@ -342,19 +464,7 @@ if(fr != FR_OK)
 
   // =================== 測試範本第二類 結束 ===================
 // 測試驗證 OK    2026-05-11
-
-
-
-
-
-
-
-
-
-
-
-
-
+*/
 
 
 
